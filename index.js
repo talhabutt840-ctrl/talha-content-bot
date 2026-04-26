@@ -33,7 +33,7 @@ async function generateCaption(niche, trend) {
 async function generateImageUrl(prompt) {
   try {
     const response = await axios.post('https://api.openai.com/v1/images/generations', {
-      model: 'dall-e-3',
+      model: 'gpt-image-1',
       prompt: `Professional social media post image: ${prompt}. Modern, clean design, vibrant colors, no text.`,
       n: 1,
       size: '1024x1024',
