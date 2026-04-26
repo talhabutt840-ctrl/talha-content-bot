@@ -8,7 +8,6 @@ const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { polling: true });
 let myChatId = null;
 let pendingPost = null;
 
-// Groq se caption generate karo
 async function generateCaption(niche, trend) {
   const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
     model: 'llama-3.3-70b-versatile',
@@ -31,13 +30,12 @@ async function generateCaption(niche, trend) {
   return response.data.choices[0].message.content;
 }
 
-// Pollinations se image generate karo
 function generateImageUrl(prompt) {
   const encoded = encodeURIComponent(prompt);
-  return `https://image.pollinations.ai/prompt/${encoded}?width=1080&height=1080&nologo=true`;
+  const seed = Math.floor(Math.random() * 1000000);
+  return `https://image.pollinations.ai/prompt/${encoded}?width=1080&height=1080&nologo=true&seed=${seed}&enhance=true`;
 }
 
-// Instagram pe post karo
 async function postToInstagram(imageUrl, caption) {
   try {
     const container = await axios.post(
@@ -62,7 +60,6 @@ async function postToInstagram(imageUrl, caption) {
   }
 }
 
-// Facebook pe post karo
 async function postToFacebook(imageUrl, caption) {
   try {
     await axios.post(
@@ -80,12 +77,11 @@ async function postToFacebook(imageUrl, caption) {
   }
 }
 
-// Daily content
 const niches = ['ecommerce', 'personal branding', 'motivational'];
 const trends = {
-  ecommerce: ['dropshipping tips', 'Etsy selling', 'product photography'],
-  'personal branding': ['content creation', 'Instagram growth', 'personal brand story'],
-  motivational: ['morning routine', 'success mindset', 'productivity hacks']
+  ecommerce: ['dropshipping tips', 'Etsy selling', 'product photography', 'online store growth', 'print on demand'],
+  'personal branding': ['content creation', 'Instagram growth', 'personal brand story', 'audience building', 'thought leadership'],
+  motivational: ['morning routine', 'success mindset', 'productivity hacks', 'self discipline', 'goal setting']
 };
 
 async function sendDailyContent() {
@@ -98,7 +94,8 @@ async function sendDailyContent() {
   bot.sendMessage(myChatId, `🎨 *Generating today's post...*\n\nNiche: ${niche}\nTrend: ${trend}`, { parse_mode: 'Markdown' });
 
   const caption = await generateCaption(niche, trend);
-  const imageUrl = generateImageUrl(`${trend} ${niche} social media post professional`);
+  const imagePrompt = `professional social media post about ${trend} for ${niche}, modern design, vibrant colors, high quality`;
+  const imageUrl = generateImageUrl(imagePrompt);
 
   pendingPost = { imageUrl, caption, niche, trend };
 
@@ -108,7 +105,6 @@ async function sendDailyContent() {
   });
 }
 
-// Bot commands
 bot.onText(/\/start/, (msg) => {
   myChatId = msg.chat.id;
   bot.sendMessage(msg.chat.id, `🚀 *Talha Content Bot Active!*\n\nRoz subah 9 baje aapko post design mil jaega approval ke liye!\n\n/generate - Abhi generate karo\n/status - Bot status`, { parse_mode: 'Markdown' });
@@ -123,7 +119,6 @@ bot.onText(/\/status/, (msg) => {
   bot.sendMessage(msg.chat.id, `✅ Bot chal raha hai!\nChat ID: ${msg.chat.id}`);
 });
 
-// Approval handle karo
 bot.on('message', async (msg) => {
   const text = msg.text?.toLowerCase();
   if (!pendingPost) return;
@@ -149,7 +144,6 @@ bot.on('message', async (msg) => {
   }
 });
 
-// Daily 9 AM schedule
 cron.schedule('0 9 * * *', () => {
   sendDailyContent();
 }, { timezone: 'Asia/Karachi' });
