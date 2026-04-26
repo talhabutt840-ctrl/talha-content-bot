@@ -30,10 +30,27 @@ async function generateCaption(niche, trend) {
   return response.data.choices[0].message.content;
 }
 
-function generateImageUrl(prompt) {
-  const encoded = encodeURIComponent(prompt);
-  const seed = Math.floor(Math.random() * 1000000);
-  return `https://image.pollinations.ai/prompt/${encoded}?width=1080&height=1080&nologo=true&seed=${seed}&enhance=true`;
+async function generateImageUrl(prompt) {
+  try {
+    const response = await axios.post('https://api.openai.com/v1/images/generations', {
+      model: 'dall-e-3',
+      prompt: `Professional social media post image: ${prompt}. Modern, clean design, vibrant colors, no text.`,
+      n: 1,
+      size: '1024x1024',
+      quality: 'standard'
+    }, {
+      headers: {
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    return response.data.data[0].url;
+  } catch (err) {
+    console.error('DALL-E error:', err.response?.data || err.message);
+    const encoded = encodeURIComponent(prompt);
+    const seed = Math.floor(Math.random() * 1000000);
+    return `https://image.pollinations.ai/prompt/${encoded}?width=1080&height=1080&nologo=true&seed=${seed}`;
+  }
 }
 
 async function postToInstagram(imageUrl, caption) {
@@ -94,8 +111,8 @@ async function sendDailyContent() {
   bot.sendMessage(myChatId, `🎨 *Generating today's post...*\n\nNiche: ${niche}\nTrend: ${trend}`, { parse_mode: 'Markdown' });
 
   const caption = await generateCaption(niche, trend);
-  const imagePrompt = `professional social media post about ${trend} for ${niche}, modern design, vibrant colors, high quality`;
-  const imageUrl = generateImageUrl(imagePrompt);
+  const imagePrompt = `${trend} for ${niche}, professional, modern, high quality`;
+  const imageUrl = await generateImageUrl(imagePrompt);
 
   pendingPost = { imageUrl, caption, niche, trend };
 
